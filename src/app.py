@@ -339,7 +339,61 @@ def free_qa():
             return jsonify({"code":-1,"msg": "Invalid llm"}), 400
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
-            
+
+@app.route('/ask_llm', methods=['POST'])
+def ask_llm():
+    args = request.get_json()
+    prt = args.get("prompt")
+    prt_uid = prt.get("uid")
+    myPromptModel = prompt.get_single_prompt(prt_uid)
+    if myPromptModel is not None:
+        if myPromptModel.few_shot:
+            examplesDict = None 
+            examplesJsonStr = bytes(str(myPromptModel.examples), 'utf-8').decode('unicode_escape')
+            examplesJsonStr = examplesJsonStr.strip('"')
+            examplesJsonStr = examplesJsonStr.strip("'")
+            if examplesJsonStr.startswith("{") or examplesJsonStr.startswith("["):
+                examplesDict = json.loads(examplesJsonStr)
+            if isinstance(examplesDict,dict):
+                examplesDict = [examplesDict]
+            myTemplate = jitChain.generate_few_prompt_template(examplesDict, myPromptModel.template, myPromptModel.suffix, myPromptModel.prefix or '', myPromptModel.seperator or '\n')
+        else:
+            myTemplate = jitChain.generate_prompt_template(myPromptModel.template)
+    else:
+        myTemplate = jitChain.generate_none_prompt_template()
+    ditems = list(args.get("dataitems"))
+    inputUidList = [] 
+    inputList = []
+    ds_uid = ""
+    for item in ditems:
+        uid = item.get("uid") or ""
+        inputUidList.append(uid)
+        item_args = item.get("args") or item
+        inputList.append(item_args)
+        ds_uid = item.get("dataset_uid") or ""
+    myChain = LLMChain(llm=openAILLM,prompt=myTemplate)
+    answerCol = args.get("column_save_to")
+    res = []
+    if myChain is not None: 
+        for idx, line in enumerate(inputList):
+            result = myChain.run(**line)
+            res.append(result)
+            time.sleep(1)
+            if answerCol is not None and len(answerCol) > 0 :
+                line[answerCol] = result
+                uid = inputUidList[idx]
+                if len(uid) > 0:
+                    dataset.update_dataitem(uid=uid, args=line)
+                elif len(ds_uid) > 0:
+                    dataset.add_dataitem(ds_uid=ds_uid, args=line)
+    return jsonify({
+        "code":0,
+        "msg":"ok",
+        "results": res
+        }), 200
+
+
+
 
 
 openAILLM=OpenAI(temperature=0.2, openai_api_key=os.environ.get("OPENAI_API_KEY"))
