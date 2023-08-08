@@ -19,6 +19,15 @@ def list_csv_files_in_current_directory():
     csv_files = [file for file in os.listdir(current_directory) if file.endswith('.csv')]
     return csv_files
 
+def list_csv_files_in_sub_directory(sub_path: str):
+    current_directory = os.getcwd()
+    sub_directory = os.path.join(current_directory, sub_path)
+    if file_exists(sub_directory):
+        csv_files = [file for file in os.listdir(sub_directory) if file.endswith('.csv')]
+        return csv_files
+    else:
+        return list[str]([])
+
 def file_exists(file_path):
     return os.path.exists(file_path)
 

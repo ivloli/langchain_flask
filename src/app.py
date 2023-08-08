@@ -12,6 +12,9 @@ import pandas as pd
 import os
 
 app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'csv'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # 定义一个接收 GET 请求的视图函数
 @app.route('/hello', methods=['GET'])
@@ -196,6 +199,83 @@ def delete_dataitem():
         "msg":"ok"
         }), 200
 
+@app.route('/get_csv_list_dataitem', methods=['GET'])
+def get_csv_list_dataitem():
+    fileList = helper.list_csv_files_in_sub_directory(app.config['UPLOAD_FOLDER'])
+    return jsonify({
+        "list": fileList or []
+        }),200
+
+def get_unique_filename(filename):
+    base, ext = os.path.splitext(filename)
+    counter = 1
+    new_filename = filename
+    while os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], new_filename)):
+        new_filename = f"{base}_{counter}{ext}"
+        counter += 1
+    return new_filename
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload_csv_dataitem', methods=['POST'])
+def upload_csv_dataitem():
+    if 'file' not in request.files:
+        return jsonify({
+            "code": -1,
+            "msg": "No file part"
+            }), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return  jsonify({
+            "code":-1,
+            "msg":'No selected file'
+            }), 400
+    
+    if file and allowed_file(file.filename):
+        filename = get_unique_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({
+            "code":0,
+            "msg": f"File uploaded successfully, saved as {filename}"
+            }), 200
+    else:
+        return jsonify({
+            "code":-1,
+            "msg":'Invalid file type'
+            }), 400
+
+@app.route('/import_dataitem_from_csv', methods=['GET'])
+def import_dataitem_from_csv():
+    filename = request.args.get('file_name','')
+    dataset_name = request.args.get('dataset_name','')
+    if filename == '':
+        return  jsonify({
+            "code":-1,
+            "msg":'No selected file'
+            }), 400
+    if dataset_name == '':
+        return  jsonify({
+            "code":-1,
+            "msg":'No selected dataset'
+            }), 400
+    if allowed_file(filename) == False:
+        return  jsonify({
+            "code":-1,
+            "msg":'Invalid file type'
+            }), 400
+    try:
+        dataset.load_dataitems_csv_excel(dsname=dataset_name, fname=os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    except ValueError:
+        return jsonify({"code":-1,"msg": "Import data item csv failed."}), 500
+    return jsonify({
+        "code":0,
+        "msg": "ok"
+        }), 200
+    
+
 @app.route('/list_dataset', methods=['GET'])
 def list_dataset():
     try:
@@ -237,6 +317,33 @@ def add_dataset():
         "msg":"ok"
         }), 200
 
+@app.route('/list_llm', methods=['GET'])
+def list_llm():
+    return jsonify({
+        "list": ["MOSS","OpenAI"]
+        })
+
+@app.route('/free_qa', methods=['POST'])
+def free_qa():
+    inputJson = request.get_json()
+    try:
+        if inputJson.get("llm") == "OpenAI":
+            question = str(inputJson.get("question"))
+            result = openAILLM(question)
+            return jsonify({
+                "code":0,
+                "msg":"ok",
+                "result":result
+                }), 200
+        else:
+            return jsonify({"code":-1,"msg": "Invalid llm"}), 400
+    except ValueError:
+        return jsonify({"code":-1,"msg": "Invalid input."}), 400
+            
+
+
+openAILLM=OpenAI(temperature=0.2, openai_api_key=os.environ.get("OPENAI_API_KEY"))
+mossLLM = None
 if __name__ == '__main__':
     #mossllm = load_moss("/root/MOSS-main/moss-moon-003-sft-int4")
     app.run(host="0.0.0.0",port=18888)
