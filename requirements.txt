@@ -1,0 +1,7 @@
+flask
+flask-sqlalchemy
+psutil
+pymysql
+langchain
+transformers
+torch

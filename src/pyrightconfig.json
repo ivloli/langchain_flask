@@ -1,0 +1,6 @@
+{
+  "reportGeneralTypeIssues": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportUndefinedVariable":"warning",
+  "reportUnboundVariable": "warning"
+}
