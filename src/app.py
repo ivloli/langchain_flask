@@ -12,19 +12,18 @@ import pandas as pd
 import os
 
 app = Flask(__name__)
-app.config['APPLICATION_ROOT'] = '/api'
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # 定义一个接收 GET 请求的视图函数
-app.route('/hello', methods=['GET'])
+@app.route('/hello', methods=['GET'])
 def hello():
     name = request.args.get('name', 'Guest')
     return f'Hello, {name}!'
 
 # 定义一个接收 POST 请求的视图函数
-app.route('/echo', methods=['POST'])
+@app.route('/echo', methods=['POST'])
 def echo():
     data = request.get_json()
     return jsonify(data)
@@ -34,11 +33,11 @@ def generate_numbers():
         yield str(i)
         time.sleep(1)
 
-app.route('/count', methods=['GET'])
+@app.route('/count', methods=['GET'])
 def count():
     return Response(stream_with_context(generate_numbers()), content_type='text/plain')
 
-app.route('/list_prompt', methods=['GET'])
+@app.route('/list_prompt', methods=['GET'])
 def list_prompt():
     try:
         page_num = int(request.args.get('page_num','1'))
@@ -79,7 +78,7 @@ def list_prompt():
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-app.route('/delete_prompt', methods=['GET'])
+@app.route('/delete_prompt', methods=['GET'])
 def delete_prompt():
     uid = request.args.get('uid','')
     if len(uid) == 0:
@@ -93,7 +92,7 @@ def delete_prompt():
         "msg":"ok"
         }), 200
 
-app.route('/add_edit_prompt', methods=['POST'])
+@app.route('/add_edit_prompt', methods=['POST'])
 def add_edit_prompt():
     try:
         inPrompt = request.get_json()
@@ -117,7 +116,7 @@ def add_edit_prompt():
         "msg":"ok"
         }), 200
 
-app.route('/get_prompt_columns', methods=['get'])
+@app.route('/get_prompt_columns', methods=['get'])
 def get_prompt_columns():
     uid = request.args.get('uid','')
     if len(uid) == 0:
@@ -148,7 +147,7 @@ def get_prompt_columns():
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-app.route('/list_dataitem', methods=['GET'])
+@app.route('/list_dataitem', methods=['GET'])
 def list_dataitem():
     try:
         page_num = int(request.args.get('page_num','1'))
@@ -186,7 +185,7 @@ def list_dataitem():
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-app.route('/delete_dataitem', methods=['GET'])
+@app.route('/delete_dataitem', methods=['GET'])
 def delete_dataitem():
     uid = request.args.get('uid','')
     if len(uid) == 0:
@@ -200,7 +199,7 @@ def delete_dataitem():
         "msg":"ok"
         }), 200
 
-app.route('/get_csv_list_dataitem', methods=['GET'])
+@app.route('/get_csv_list_dataitem', methods=['GET'])
 def get_csv_list_dataitem():
     fileList = helper.list_csv_files_in_sub_directory(app.config['UPLOAD_FOLDER'])
     return jsonify({
@@ -219,7 +218,7 @@ def get_unique_filename(filename):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-app.route('/upload_csv_dataitem', methods=['POST'])
+@app.route('/upload_csv_dataitem', methods=['POST'])
 def upload_csv_dataitem():
     if 'file' not in request.files:
         return jsonify({
@@ -248,7 +247,7 @@ def upload_csv_dataitem():
             "msg":'Invalid file type'
             }), 400
 
-app.route('/import_dataitem_from_csv', methods=['GET'])
+@app.route('/import_dataitem_from_csv', methods=['GET'])
 def import_dataitem_from_csv():
     filename = request.args.get('file_name','')
     dataset_name = request.args.get('dataset_name','')
@@ -277,7 +276,7 @@ def import_dataitem_from_csv():
         }), 200
     
 
-app.route('/list_dataset', methods=['GET'])
+@app.route('/list_dataset', methods=['GET'])
 def list_dataset():
     try:
         page_num = int(request.args.get('page_num','1'))
@@ -303,7 +302,7 @@ def list_dataset():
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-app.route('/add_dataset', methods=['POST'])
+@app.route('/add_dataset', methods=['POST'])
 def add_dataset():
     inData = request.get_json()
     name = inData.get("name")
@@ -318,13 +317,13 @@ def add_dataset():
         "msg":"ok"
         }), 200
 
-app.route('/list_llm', methods=['GET'])
+@app.route('/list_llm', methods=['GET'])
 def list_llm():
     return jsonify({
         "list": ["MOSS","OpenAI"]
         })
 
-app.route('/free_qa', methods=['POST'])
+@app.route('/free_qa', methods=['POST'])
 def free_qa():
     inputJson = request.get_json()
     try:
@@ -341,7 +340,7 @@ def free_qa():
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-app.route('/ask_llm', methods=['POST'])
+@app.route('/ask_llm', methods=['POST'])
 def ask_llm():
     args = request.get_json()
     prt = args.get("prompt")
