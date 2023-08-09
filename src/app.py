@@ -86,8 +86,8 @@ def delete_prompt():
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
     try:
         prompt.delete_prompt(uid)
-    except ValueError:
-        return jsonify({"code":-1,"msg": "Invalid input."}), 400
+    except ValueError as e:
+        return jsonify({"code":-1,"msg": "Invalid input."+str(e)}), 400
     return jsonify({
         "code":0,
         "msg":"ok"
