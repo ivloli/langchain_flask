@@ -58,6 +58,7 @@ def list_prompt():
                     examplesDict = [examplesDict]
             vd = {
                     "id": v.id,
+                    "uid": v.uid,
                     "examples":examplesDict,
                     "is_few_shot":bool(v.few_shot),
                     "name":str(v.name),
