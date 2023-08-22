@@ -49,6 +49,11 @@ def all_elements_in_list_a(a, b):
 
     return set_b.issubset(set_a)
 
+def parse_nan(value):
+    if value.lower() == 'nan':
+        return None
+    return value
+
 def parse_json(json_str):
     try:
         data = json.loads(json_str)

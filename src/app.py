@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify, Response, stream_with_context, Blueprint
 import helper
-import time, json
+import time, json, simplejson
 from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
+from langchain.prompts import ChatPromptTemplate
+from langchain.prompts.chat import SystemMessage, HumanMessagePromptTemplate
 #from llms.LangChainMOSSWrapper import LangChainMOSSWrapper
 from models import DataSet,Prompt,DataItem
 from views import dataset, prompt
@@ -11,6 +14,16 @@ from typing import Dict
 import pandas as pd
 import os
 
+template = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(
+            content=(
+                "你是吉大正元大模型机器人，可以帮助人们回答问题"
+            )
+        ),
+        HumanMessagePromptTemplate.from_template("{text}"),
+    ]
+)
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'csv'}
@@ -79,7 +92,7 @@ def list_prompt():
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-@app.route('/api/delete_prompt', methods=['GET'])
+@app.route('/api/delete_prompt', methods=['DELETE'])
 def delete_prompt():
     uid = request.args.get('uid','')
     if len(uid) == 0:
@@ -181,12 +194,12 @@ def list_dataitem():
             "total": ditems.get("total"),
             "list": displayList
         }
-        return jsonify(result), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        return simplejson.dumps(result, ignore_nan=True), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
     except ValueError:
         return jsonify({"code":-1,"msg": "Invalid input."}), 400
 
-@app.route('/api/delete_dataitem', methods=['GET'])
+@app.route('/api/delete_dataitem', methods=['DELETE'])
 def delete_dataitem():
     uid = request.args.get('uid','')
     if len(uid) == 0:
@@ -321,7 +334,7 @@ def add_dataset():
 @app.route('/api/list_llm', methods=['GET'])
 def list_llm():
     return jsonify({
-        "list": ["MOSS","OpenAI"]
+        "list": ["MOSS","OpenAI","ChatGLM2"]
         })
 
 @app.route('/api/free_qa', methods=['POST'])
@@ -330,11 +343,20 @@ def free_qa():
     try:
         if inputJson.get("llm") == "OpenAI":
             question = str(inputJson.get("question"))
-            result = openAILLM(question)
+            #result = openAILLM(question)
+            result = "this is demo"
             return jsonify({
                 "code":0,
                 "msg":"ok",
                 "result":result
+                }), 200
+        elif inputJson.get("llm") == "ChatGLM2":
+            question = str(inputJson.get("question"))
+            result = glm2llm(template.format_messages(text=question))
+            return jsonify({
+                "code":0,
+                "msg":"ok",
+                "result":result.content
                 }), 200
         else:
             return jsonify({"code":-1,"msg": "Invalid llm"}), 400
@@ -377,7 +399,8 @@ def ask_llm():
     res = []
     if myChain is not None: 
         for idx, line in enumerate(inputList):
-            result = myChain.run(**line)
+            #result = myChain.run(**line)
+            result = "this is demo"
             res.append(result)
             time.sleep(1)
             if answerCol is not None and len(answerCol) > 0 :
@@ -401,5 +424,6 @@ openAILLM=OpenAI(temperature=0.2, openai_api_key=os.environ.get("OPENAI_API_KEY"
 mossLLM = None
 if __name__ == '__main__':
     #mossllm = load_moss("/root/MOSS-main/moss-moon-003-sft-int4")
-    app.run(host="0.0.0.0",port=18888)
+    glm2llm = ChatOpenAI(openai_api_key="EMPTY", openai_api_base="http://localhost:8888/v1", model_name="chatglm2-6b")
+    app.run(host="0.0.0.0",port=8501)
 
