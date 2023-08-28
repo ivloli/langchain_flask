@@ -3,7 +3,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import ChatMessage
 import streamlit as st
 from langchain.prompts import ChatPromptTemplate
-from langchain.prompts.chat import SystemMessage, HumanMessagePromptTemplate
+from langchain.prompts.chat import HumanMessagePromptTemplate
+from langchain.schema.messages import SystemMessage
 
 template = ChatPromptTemplate.from_messages(
     [

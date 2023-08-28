@@ -14,7 +14,7 @@ class StreamHandler(BaseCallbackHandler):
         self.container.markdown(self.text)
 
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [ChatMessage(role="assistant", content="How can I help you?")]
+    st.session_state["messages"] = [ChatMessage(role="assistant", content="How can I help you?"),ChatMessage(role="system", content="你是一个超级机器人")]
 
 for msg in st.session_state.messages:
     st.chat_message(msg.role).write(msg.content)

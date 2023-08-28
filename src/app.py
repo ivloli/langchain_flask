@@ -343,6 +343,7 @@ def free_qa():
     try:
         if inputJson.get("llm") == "OpenAI":
             question = str(inputJson.get("question"))
+            openAILLM=OpenAI(temperature=0.2, openai_api_key=os.environ.get("OPENAI_API_KEY"))
             #result = openAILLM(question)
             result = "this is demo"
             return jsonify({
@@ -394,14 +395,16 @@ def ask_llm():
         item_args = item.get("args") or item
         inputList.append(item_args)
         ds_uid = item.get("dataset_uid") or ""
-    myChain = LLMChain(llm=openAILLM,prompt=myTemplate)
+    myChain = LLMChain(llm=glm2llm,prompt=myTemplate)
     answerCol = args.get("column_save_to")
     res = []
     if myChain is not None: 
         for idx, line in enumerate(inputList):
-            #result = myChain.run(**line)
-            result = "this is demo"
-            res.append(result)
+            result = myChain.run(**line)
+            print(result)
+            #result = "this is demo"
+            first_line = result.split("\n", 1)[0]
+            res.append(first_line)
             time.sleep(1)
             if answerCol is not None and len(answerCol) > 0 :
                 line[answerCol] = result
@@ -420,7 +423,6 @@ def ask_llm():
 
 
 
-openAILLM=OpenAI(temperature=0.2, openai_api_key=os.environ.get("OPENAI_API_KEY"))
 mossLLM = None
 if __name__ == '__main__':
     #mossllm = load_moss("/root/MOSS-main/moss-moon-003-sft-int4")
