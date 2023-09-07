@@ -329,14 +329,15 @@ with st.form("template"):
                 with st.spinner('Wait for it...'):
                     if stLLM == "MOSS":
                         outputText = mossllm(inputText)
+                        result = get_substrings_between_symbols(outputText+"<")
+                        answer = max(result, key=len)
                     else:
                         outputText = chatGLMllm(defaultTemplate.format_messages(text=inputText))
-                result = get_substrings_between_symbols(outputText.content+"<")
-                longest_substring = max(result, key=len)
+                        answer = outputText.content
                 #st.info(result)
-                st.info(longest_substring)
+                st.info(answer)
                 if answerCol is not None and len(answerCol) > 0 :
-                    line[answerCol] = longest_substring
+                    line[answerCol] = answer
                     uid = inputUidList[idx]
                     if len(uid) > 0:
                         dataset.update_dataitem(uid=uid, args=line)
