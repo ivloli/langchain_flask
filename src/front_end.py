@@ -1,5 +1,9 @@
 from langchain.llms import OpenAI
 from langchain import LLMChain
+from langchain.prompts import ChatPromptTemplate
+from langchain.prompts.chat import HumanMessagePromptTemplate
+from langchain.schema.messages import SystemMessage
+from langchain.chat_models import ChatOpenAI
 from streamlit.elements.write import json
 from llms.LangChainMOSSWrapper import LangChainMOSSWrapper
 from models import DataSet,Prompt,DataItem
@@ -192,10 +196,30 @@ with side.form("Create DataItem"):
 @st.cache_resource
 def load_moss(path: str):
     return LangChainMOSSWrapper(path)
+
+@st.cache_resource
+def load_chatGLM(url: str):
+    return ChatOpenAI(openai_api_key="EMPTY", openai_api_base=url, model_name="chatglm2-6b")
+
+@st.cache_resource
+def load_defaultTemplate(systemContent: str):
+    template = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage(
+                content=(
+                   systemContent 
+                )
+            ),
+            HumanMessagePromptTemplate.from_template("{text}"),
+        ]
+    )
+    return template
 ###########################
 #main page
 st.write("# Main Page")
 #mossllm = load_moss("/root/MOSS-main/moss-moon-003-sft-int4")
+defaultTemplate = load_defaultTemplate("你是吉大正元大模型助手")
+chatGLMllm = load_chatGLM("http://localhost:8888/v1")
 dsList = dataset.get_datasets(1,50)
 
 st.write("## DataSets")
@@ -295,15 +319,18 @@ if not all_elements_in_list_a(inputCommoneKeys, templateInputKeys):
 
 
 st.write("## LLMs")
-stLLM = st.radio("Select LLM", ["OpenAI"])
+stLLM = st.radio("Select LLM", ["ChatGLM2","OpenAI"])
 
 with st.form("template"):
     if st.form_submit_button("Run"):
-        if stLLM == "MOSS":
+        if stLLM == "MOSS" or stLLM == "ChatGLM2":
             for idx,line in enumerate(inputList):
                 inputText = myTemplate.format(**line)
                 with st.spinner('Wait for it...'):
-                    outputText = mossllm(inputText)
+                    if stLLM == "MOSS":
+                        outputText = mossllm(inputText)
+                    else:
+                        outputText = chatGLMllm(defaultTemplate.format_messages(text=inputText))
                 result = get_substrings_between_symbols(outputText+"<")
                 longest_substring = max(result, key=len)
                 #st.info(result)
