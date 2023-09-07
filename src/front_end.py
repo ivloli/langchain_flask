@@ -333,7 +333,7 @@ with st.form("template"):
                         answer = max(result, key=len)
                     else:
                         outputText = chatGLMllm(defaultTemplate.format_messages(text=inputText))
-                        answer = outputText.content
+                        answer = outputText.content.splitlines()[0]
                 #st.info(result)
                 st.info(answer)
                 if answerCol is not None and len(answerCol) > 0 :
