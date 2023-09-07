@@ -331,7 +331,7 @@ with st.form("template"):
                         outputText = mossllm(inputText)
                     else:
                         outputText = chatGLMllm(defaultTemplate.format_messages(text=inputText))
-                result = get_substrings_between_symbols(outputText+"<")
+                result = get_substrings_between_symbols(outputText.content+"<")
                 longest_substring = max(result, key=len)
                 #st.info(result)
                 st.info(longest_substring)
